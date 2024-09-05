@@ -1,0 +1,28 @@
+pkgbase = python-aioetherscan-git
+	pkgdesc = Etherscan API async Python wrapper.
+	pkgver = 0.9.5.r0.g5bfbe39f92bfd672053699b540cc102ae2f48f0c
+	pkgrel = 1
+	url = https://github.com/themartiancompany/aioetherscan
+	arch = any
+	groups = hip
+	groups = hip-git
+	license = AGPL3
+	checkdepends = shellcheck
+	makedepends = python-build
+	makedepends = python-installer
+	makedepends = python-poetry
+	makedepends = python-poetry-core
+	makedepends = python-wheel
+	makedepends = curl
+	makedepends = jq
+	depends = python>=3.9
+	depends = python-aiohttp>=3.4
+	depends = python-asyncio-throttle>=1.0.1
+	depends = python-aiohttp-retry>=2.8.3
+	provides = python-aioetherscan=0.9.5.r0.g5bfbe39f92bfd672053699b540cc102ae2f48f0c
+	provides = aioetherscan=0.9.5.r0.g5bfbe39f92bfd672053699b540cc102ae2f48f0c
+	conflicts = python-aioetherscan
+	source = aioetherscan.tar.gz::https://github.com/themartiancompany/aioetherscan/archive/refs/heads/master.tar.gz
+	sha256sums = SKIP
+
+pkgname = python-aioetherscan-git
