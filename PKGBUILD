@@ -1,19 +1,29 @@
 # SPDX-License-Identifier: AGPL-3.0
 #
-# Maintainer:  Truocolo <truocolo@aol.com>
-# Maintainer:  Pellegrino Prevete <pellegrinoprevete@gmail.com>
+# Maintainer: Truocolo <truocolo@aol.com>
+# Maintainer: Pellegrino Prevete (tallero) <pellegrinoprevete@gmail.com>
 
 _os="$( \
   uname \
     -o)"
-_git=false
-_offline=false
+_git="false"
+_offline="false"
 _proj="hip"
 _py="python"
-_pkg="aioetherscan"
+_pyver="$( \
+  "${_py}" \
+    -V | \
+    awk \
+      '{print $2}')"
+_pymajver="${_pyver%.*}"
+_pyminver="${_pymajver#*.}"
+_pynextver="${_pymajver%.*}.$(( \
+  ${_pyminver} + 1))"
+_pkg=aioetherscan
 _pkgname="${_py}-${_pkg}"
 pkgname="${_pkgname}-git"
 pkgver="0.9.5".r0.g"5bfbe39f92bfd672053699b540cc102ae2f48f0c"
+_commit="hijess"
 pkgrel=1
 _pkgdesc=(
   'Etherscan API async Python wrapper.'
@@ -24,29 +34,34 @@ arch=(
 )
 _gl="gitlab.com"
 _gh="github.com"
-_host="https://${_gh}"
-_ns='themartiancompany'
+_http="https://${_gh}"
+_ns="themartiancompany"
 _local="file://${HOME}/${_pkg}"
-url="${_host}/${_ns}/${_pkg}"
+url="${_http}/${_ns}/${_pkg}"
 _gh_api="https://api.${_gh}/repos/${_ns}/${_pkg}"
 license=(
   AGPL3
 )
 depends=(
+  "${_py}>=${_pymajver}"
+  "${_py}<${_pynextver}"
   "${_py}>=3.9"
   "${_py}-aiohttp>=3.4"
   "${_py}-asyncio-throttle>=1.0.1"
   "${_py}-aiohttp-retry>=2.8.3"
 )
 makedepends=(
+  "cython"
   "${_py}-build"
   "${_py}-installer"
   "${_py}-poetry"
   "${_py}-poetry-core"
   "${_py}-wheel"
+  "${_py}-setuptools"
 )
 checkdepends=(
-  shellcheck
+  "${_py}-pytest>=8.2.2"
+  "${_py}-pytest-asyncio>=0.23.7"
 )
 optdepends=(
 )
@@ -59,33 +74,50 @@ provides=(
 )
 conflicts=(
   "${_pkgname}"
+  "${_pkg}"
 )
 groups=(
  "${_proj}"
  "${_proj}-git"
 )
 _url="${url}"
-[[ "${_offline}" == true ]] && \
+if [[ "${_offline}" == "true" ]]; then
   _url="${_local}"
-source=()
-_branch="master"
-[[ "${_git}" == true ]] && \
+fi
+_tag="master"
+_tag_name="branch"
+_tarname="${pkgname}-${_tag}"
+
+if [[ "${_git}" == true ]]; then
   makedepends+=(
-    git
-  ) && \
-  source+=(
-    "${_pkg}-${_branch}::git+${_url}#branch=${_branch}"
+    "git"
   )
-[[ "${_git}" == false ]] && \
+  _src="${_tarname}::git+${_url}#${_tag_name}=${_tag}?signed"
+  _sum="SKIP"
+elif [[ "${_git}" == false ]]; then
   makedepends+=(
     curl
     jq
-  ) && \
-  source+=(
-    "${_pkg}.tar.gz::${_url}/archive/refs/heads/${_branch}.tar.gz"
   )
+  if [[ "${_tag_name}" == 'pkgver' ]]; then
+    _src="${_tarname}.tar.gz::${_url}/archive/refs/tags/${_tag}.tar.gz"
+    _sum="d4f4179c6e4ce1702c5fe6af132669e8ec4d0378428f69518f2926b969663a91"
+  elif [[ "${_tag_name}" == "commit" ]]; then
+    _src="${_tarname}.zip::${_url}/archive/${_commit}.zip"
+    _sum='31ac0b8014076f8c7cafa1c92c311359dc7f6f931e17c0a718c406cae77272f7'
+  fi
+fi
+source=(
+  "${_src}"
+)
 sha256sums=(
-  SKIP
+  "${_sum}"
+)
+validpgpkeys=(
+  # Truocolo <truocolo@aol.com>
+  '97E989E6CF1D2C7F7A41FF9F95684DBE23D6A3E9'
+  # Pellegrino Prevete <pellegrinoprevete@gmail.com>
+  'E30813C918EDD358EFCDCA34D3104DE92EB34492'
 )
 
 _nth() {
@@ -189,19 +221,17 @@ pkgver() {
 
 build() {
   cd \
-    "${_pkg}-${_branch}"
+    "${_tarname}"
   poetry \
-    build
-  # python \
-  #   -m \
-  #     build \
-  #   --wheel \
-  #   --no-isolation
+    build \
+    -f \
+      sdist
 }
 
+# shellcheck disable=SC2154
 package() {
   cd \
-    "${_pkg}-${_branch}"
+    "${_tarname}"
   "${_py}" \
     -m \
       installer \
