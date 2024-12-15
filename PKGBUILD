@@ -22,7 +22,7 @@ _pynextver="${_pymajver%.*}.$(( \
 _pkg=aioetherscan
 _pkgname="${_py}-${_pkg}"
 pkgname="${_pkgname}-git"
-pkgver="0.9.5".r0.g"5bfbe39f92bfd672053699b540cc102ae2f48f0c"
+pkgver="0.9.5.1".r24.g"7fae5b39029b0ede6ca5a69ab9b743d2e71d52b4"
 _commit="hijess"
 pkgrel=1
 _pkgdesc=(
@@ -86,9 +86,9 @@ if [[ "${_offline}" == "true" ]]; then
 fi
 _tag="master"
 _tag_name="branch"
-_tarname="${pkgname}-${_tag}"
-
+_tarname="${_pkg}-${_tag}"
 if [[ "${_git}" == true ]]; then
+  echo "hi"
   makedepends+=(
     "git"
   )
@@ -99,7 +99,10 @@ elif [[ "${_git}" == false ]]; then
     curl
     jq
   )
-  if [[ "${_tag_name}" == 'pkgver' ]]; then
+  if [[ "${_tag_name}" == 'branch' ]]; then
+    _src="${_tarname}.tar.gz::${_url}/archive/refs/heads/${_tag}.tar.gz"
+    _sum="SKIP"
+  elif [[ "${_tag_name}" == 'pkgver' ]]; then
     _src="${_tarname}.tar.gz::${_url}/archive/refs/tags/${_tag}.tar.gz"
     _sum="d4f4179c6e4ce1702c5fe6af132669e8ec4d0378428f69518f2926b969663a91"
   elif [[ "${_tag_name}" == "commit" ]]; then
@@ -211,7 +214,7 @@ _git_pkgver() {
 
 pkgver() {
   cd \
-    "${_pkg}-${_branch}"
+    "${_tarname}"
   if [[ "${_git}" == true ]]; then
     _git_pkgver
   elif [[ "${_git}" == false ]]; then
@@ -223,9 +226,8 @@ build() {
   cd \
     "${_tarname}"
   poetry \
-    build \
-    -f \
-      sdist
+    -vvv \
+    build
 }
 
 # shellcheck disable=SC2154
