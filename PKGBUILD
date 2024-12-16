@@ -3,9 +3,9 @@
 # Maintainer: Truocolo <truocolo@aol.com>
 # Maintainer: Pellegrino Prevete (tallero) <pellegrinoprevete@gmail.com>
 
-_poetry="false"
+_poetry="true"
 _setuptools="false"
-_build="true"
+_build="false"
 _os="$( \
   uname \
     -o)"
