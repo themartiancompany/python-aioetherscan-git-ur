@@ -3,6 +3,9 @@
 # Maintainer: Truocolo <truocolo@aol.com>
 # Maintainer: Pellegrino Prevete (tallero) <pellegrinoprevete@gmail.com>
 
+_poetry="false"
+_setuptools="false"
+_build="true"
 _os="$( \
   uname \
     -o)"
@@ -22,7 +25,7 @@ _pynextver="${_pymajver%.*}.$(( \
 _pkg=aioetherscan
 _pkgname="${_py}-${_pkg}"
 pkgname="${_pkgname}-git"
-pkgver="0.9.5.1".r24.g"7fae5b39029b0ede6ca5a69ab9b743d2e71d52b4"
+pkgver="0.9.6.1".r3.g"c3041033e3dea1ba4ce7748fa1c7093e5d35f94a"
 _commit="hijess"
 pkgrel=1
 _pkgdesc=(
@@ -52,13 +55,22 @@ depends=(
 )
 makedepends=(
   "cython"
-  "${_py}-build"
-  "${_py}-installer"
-  "${_py}-poetry"
-  "${_py}-poetry-core"
   "${_py}-wheel"
   "${_py}-setuptools"
 )
+if [[ "${_build}" == "true" ]] || \
+   [[ "${_poetry}" == "true" ]]; then
+  makedepends+=(
+    "${_py}-build"
+    "${_py}-poetry-core"
+    "${_py}-installer"
+  )
+fi
+if [[ "${_poetry}" == "true" ]]; then
+  makedepends+=(
+    "${_py}-poetry"
+  )
+fi
 checkdepends=(
   "${_py}-pytest>=8.2.2"
   "${_py}-pytest-asyncio>=0.23.7"
@@ -222,23 +234,66 @@ pkgver() {
   fi
 }
 
-build() {
-  cd \
-    "${_tarname}"
+_poetry_build() {
+  export \
+    POETRY_VIRTUALENVS_OPTIONS_NO_PIP=true \
+    POETRY_VIRTUALENVS_OPTIONS_SYSTEM_SITE_PACKAGES=true
+    # POETRY_VIRTUALENVS_CREATE=false
+  # POETRY_VIRTUALENVS_CREATE=false \
+  POETRY_VIRTUALENVS_OPTIONS_NO_PIP=true \
+  POETRY_VIRTUALENVS_OPTIONS_SYSTEM_SITE_PACKAGES=true \
   poetry \
     -vvv \
     build
+}
+
+_build_build() {
+  # this currently gives no output at all
+  "${_py}" \
+    -m \
+      build \
+    --verbose \
+    --wheel \
+    --no-isolation
+}
+
+build() {
+  cd \
+    "${_tarname}"
+  if [[ "${_poetry}" == "true" ]]; then
+    _poetry_build
+  fi
+  if [[ "${_build}" == "true" ]]; then
+    _build_build
+  fi
+}
+
+_setuptools_package() {
+  "${_py}" \
+    setup.py \
+      install \
+        --root="${pkgdir}" \
+        --optimize=1
+}
+
+_installer_package() {
+  "${_py}" \
+    -m \
+      installer \
+      --destdir="${pkgdir}" \
+      dist/*.whl
 }
 
 # shellcheck disable=SC2154
 package() {
   cd \
     "${_tarname}"
-  "${_py}" \
-    -m \
-      installer \
-      --destdir="${pkgdir}" \
-      dist/*.whl
+  if [[ "${_setuptools}" == "true" ]]; then
+    _setuptools_package
+  elif [[ "${_poetry}" == "true" ]] || \
+       [[ "${_build}" == "true" ]]; then
+    _installer_package
+  fi
   install \
     -Dm644 \
     LICENSE \
